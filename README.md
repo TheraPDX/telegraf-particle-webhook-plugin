@@ -170,7 +170,7 @@ func TestAvailableWebhooks(t *testing.T) {
 
 ####2c. Save (and you may close) the file.
 
-###3 Add Gorilla Scheme to the godeps
+###3. Add Gorilla Scheme to the godeps
 
 The Plugin uses [Gorilla web toolkit](http://www.gorillatoolkit.org/) [package schema](http://www.gorillatoolkit.org/pkg/schema). This must be included in Telegraf's godeps
 
@@ -197,7 +197,7 @@ github.com/gorilla/schema 8aac656cd31cfb73a9dfd142494864fa0b84f723
 ```
 
 
-###4 Run 'make'
+###4. Run 'make'
 
 From the telegraf root directory, run 'make'
 
@@ -289,13 +289,13 @@ You should see output similar to this:
 2016/07/16 14:25:41 Started 'particle' on /particle
 ```
 
-NB the that webhooks service started and 'particle' (our Webhook) started on 
+NB the webhooks service started and 'particle' (our Webhook) started on '/particle'
 
 ###7 Test the Plugin
 
 If you have a [Photon](https://www.particle.io/prototype#photon) (or other Particle device) and the device is Internet connected and the port (1619) on the machine on which the Plugin is running is also Internet accessible, you will be able to test the Plugin by configuring one of Particle's "Integrations" using the Particle dashboard.
 
-####7a Publish events
+####7a. Publish events
 
 If you have an existing example, feel free to use it. To help and for convenience, the following trivial example publishes random numbers every 10 seconds. Deploy this code to one of your Photon devices.
 
@@ -313,7 +313,7 @@ The [Dashboard](https://dashboard.particle.io/user/logs) should show something l
 [TBD]
 
 
-####7b Configure Integration
+####7b. Configure Integration
 
 1. Visit the [Particle Dashboard](https://dashboard.particle.io/user/devices)
 1. Login if necessary
@@ -324,3 +324,13 @@ The [Dashboard](https://dashboard.particle.io/user/logs) should show something l
 And then complete the form using the IP address of the Plugin:
 
 [TBD]
+
+###Curl
+
+Alternatively, you may cURL the endpoint:
+
+```
+curl \
+--data "event=randomnumber&data=999&published_at=2016-07-16T23%3A59%3A59Z&coreid=123456789abcdef12345678" \
+http://localhost:1619/particle
+```
