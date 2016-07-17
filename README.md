@@ -1,7 +1,7 @@
 # telegraf-particle-webhook-plugin
 Particle Webhook Plug-in for Telegraf
 
-###Download the Plugin###
+##Download the Plugin
 
 ```
 export MY-PROJECT=[YOUR PROJECT DIRECTORY]
@@ -325,7 +325,7 @@ And then complete the form using the IP address of the Plugin:
 
 [TBD]
 
-###Curl
+##Curl
 
 Alternatively, you may cURL the endpoint:
 
@@ -333,4 +333,129 @@ Alternatively, you may cURL the endpoint:
 curl \
 --data "event=randomnumber&data=999&published_at=2016-07-16T23%3A59%3A59Z&coreid=123456789abcdef12345678" \
 http://localhost:1619/particle
+```
+
+##Dockerize
+
+1. Create a Docker Network
+1. Edit the Telegraf configuration ('telegraf.conf') to reference the InfluxDB database
+1. Build a container for Telegraf with the telegraf-particle-webhook-plugin
+1. Run #1, InfluxDB and Grafana
+1. Query InfluxDB 'telegraf' database
+1. Add a Grafana graph display the measurements
+
+Telegraf is configured to use InfluxDB but assumes InfluxDB is running on localhost. This will not be true when the servers are running in containers. Edit 'telegraf.conf', find the section '[[outputs.influxdb]]' and change the value of 'urls' to point to influxdb rather than localhost. The result should look like this:
+
+```
+[[outputs.influxdb]]
+  ...
+  urls = ["http://influxdb:8086"]
+```
+
+In order to easily connect Grafana, Telegraf to InfluxDB, we'll run the containers on the same Docker Network
+
+    docker network create influxdata
+
+Create a Dockerfile (proposed name: 'Dockerfile.ubuntu') in your project directory:
+
+```
+cd $MY-PROJECT
+touch Dockerfile.ubuntu
+```
+
+Use the following content for the Dockerfile
+
+```
+from golang:wheezy
+
+env root="src/github.com"
+env telegraf="$root/influxdata/telegraf"
+
+run apt-get -y update && apt-get -y upgrade
+
+add ./go .
+workdir $telegraf
+run make prepare build-for-docker
+expose 1619
+entrypoint ["./telegraf","-config","telegraf.conf"]
+```
+
+Build the Docker image:
+
+```
+docker build \
+--tag=telegraf:ubuntu \
+--file=Dockerfile.ubuntu \
+.
+```
+
+NB Don't forget the final "."
+
+Now we'll run the 3 containers using the Docker Network
+
+```
+docker run -d \
+--name=influxdb \
+--net=influxdata \
+--publish=8083:8083 \
+--publish=8086:8086 \
+influxdb
+
+docker run -d \
+--name=telegraf \
+--net=influxdata \
+--publish=1619:1619 \
+telegraf:ubuntu
+
+docker run -d \
+--name=grafana  \
+--net=influxdata \
+--publish=3000:3000 \
+grafana/grafana
+```
+
+If you're familiar with InfluxDB's UI, you should be able to access it on your host (localhost?) as
+
+    http://localhost:8083
+
+Alternatively, you can make queries directly against the database's query endpoint (:8086), e.g.
+
+    http://localhost:8086/query?q=select+%22data%22+from+%22particle%22&db=telegraf
+
+The InfluxDB 'telegraf' will only be created once measurements are received.
+
+If you need to generate some test data you may use curl as explained above.
+
+The Grafana UI is accessible on your host's port 3000:
+
+    http://localhost:3000
+    
+Add a Data Source
+
+- Name: InfluxDB
+- Default: [Check]
+- Url: http://localhost:8086
+- Access: direct
+- Database: telegraf
+- User: root
+- Password: root
+
+Click "Save & Test" to confirm this is working
+
+Create a Grafana dashboard, add a "Graph" and use a query:
+
+    SELECT mean("data") FROM "particle" WHERE $timeFilter GROUP BY time($interval) fill(none)
+
+The Grafana editor is very helpful and you can click e.g. "select measurement" for a dropdown of options (choose 'particle')
+
+####Tidy-up
+
+The following will stop-remove the containers and delete the network
+
+```
+for container in grafana telegraf influxdb
+do
+  docker stop $container | xargs docker rm
+done
+docker network rm influxdata
 ```
