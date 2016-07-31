@@ -174,7 +174,7 @@ func TestAvailableWebhooks(t *testing.T) {
 
 The Plugin uses [Gorilla web toolkit](http://www.gorillatoolkit.org/) [package schema](http://www.gorillatoolkit.org/pkg/schema). This must be included in Telegraf's godeps
 
-####3a. Edit 'gopeps'
+####3a. Edit 'godeps'
 
 In the directory:
 
